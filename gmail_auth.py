@@ -8,9 +8,8 @@ from googleapiclient.discovery import build
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 def authenticate_gmail():
+
     creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first time
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
@@ -20,7 +19,7 @@ def authenticate_gmail():
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                'gmail-credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
 
         # Save the credentials for next run
@@ -45,14 +44,9 @@ if __name__ == '__main__':
         for label in labels:
             print(f"- {label['name']}")
 
-
-    """Checks if a token.json exists (already authenticated).
-
-If not, launches a browser window for Google sign-in.
-
-Saves a token.json for future use (you won’t have to log in again unless it expires).
-
-Builds a Gmail API client you can use in future functions.
-
-Lists Gmail labels (as a simple test of access).
-    """
+#The script checks if a token.json exists (already authenticated).
+#If not, launches a browser window for Google sign-in.
+#Saves a token.json for future use (you won’t have to log in again unless it 
+#expires).
+#Builds a Gmail API client you can use in future functions.
+#Lists Gmail labels (as a simple test of access).
