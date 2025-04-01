@@ -19,8 +19,6 @@ creds = Credentials.from_authorized_user_file(
 )
 
 service = build("gmail", "v1", credentials=creds)
-
-# Get the current UTC date in a timezone-aware format to filter emails received today
 today_utc = datetime.now(timezone.utc).date()
 
 # Call the Gmail API
@@ -54,13 +52,14 @@ else:
         payload = msg_detail.get('payload', {})
         headers = payload.get('headers', [])
 
-        subject = next((header['value'] for header in headers if 
-                        header['name'] == 'Subject'), 'No Subject')
-        date = next((header['value'] for header in headers if 
-                     header['name'] == 'Date'), 'No Date')
+        # Extract email headers
+        subject = next((header['value'] for header in headers if header['name'] == 'Subject'), 'No Subject')
+        date = next((header['value'] for header in headers if header['name'] == 'Date'), 'No Date')
+        sender = next((header['value'] for header in headers if header['name'] == 'From'), 'Unknown Sender')
 
         print(f"📩 Subject: {subject}")
         print(f"🕒 Date: {date}")
+        print(f"👤 From: {sender}")
 
         # Extract plain text body
         email_body = ""
@@ -88,7 +87,7 @@ else:
                 messages=[
                     {
                         "role": "system",
-                        "content":(
+                        "content": (
                             "You are a smart and helpful email assistant. "
                             "Your job is to read the email message provided and generate a short, professional, and relevant response. "
                             "If the email contains a question or request, respond clearly and directly. "
