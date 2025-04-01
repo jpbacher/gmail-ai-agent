@@ -1,5 +1,3 @@
-import re
-
 def is_likely_newsletter(headers, subject, body):
     """
     Applies rules to determine whether an email is a newsletter or bulk message.
