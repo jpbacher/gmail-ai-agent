@@ -11,18 +11,29 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Load Gmail credentials
-creds = Credentials.from_authorized_user_file("token.json", ["https://www.googleapis.com/auth/gmail.readonly"])
+creds = Credentials.from_authorized_user_file(
+    "token.json",
+    [
+        "https://www.googleapis.com/auth/gmail.readonly"
+    ]
+)
+
 service = build("gmail", "v1", credentials=creds)
 
 # Get the current UTC date in a timezone-aware format to filter emails received today
 today_utc = datetime.now(timezone.utc).date()
 
 # Call the Gmail API
-results = service.users().messages().list(
-    userId='me',
-    labelIds=['INBOX'],
-    q=f'category:primary after:{today_utc}'
-).execute()
+results = (
+    service.users()
+    .messages()
+    .list(
+        userId='me',
+        labelIds=['INBOX'],
+        q=f'category:primary after:{today_utc}'
+    )
+    .execute()
+)
 
 messages = results.get('messages', [])
 
@@ -31,12 +42,22 @@ if not messages:
 else:
     print(f"Found {len(messages)} new email(s) in Primary today.")
     for msg in messages:
-        msg_detail = service.users().messages().get(userId='me', id=msg['id']).execute()
+        msg_detail = (
+            service.users()
+            .messages()
+            .get(
+                userId='me', 
+                id=msg['id']
+            )
+            .execute()
+        )
         payload = msg_detail.get('payload', {})
         headers = payload.get('headers', [])
 
-        subject = next((header['value'] for header in headers if header['name'] == 'Subject'), 'No Subject')
-        date = next((header['value'] for header in headers if header['name'] == 'Date'), 'No Date')
+        subject = next((header['value'] for header in headers if 
+                        header['name'] == 'Subject'), 'No Subject')
+        date = next((header['value'] for header in headers if 
+                     header['name'] == 'Date'), 'No Date')
 
         print(f"📩 Subject: {subject}")
         print(f"🕒 Date: {date}")
@@ -47,7 +68,8 @@ else:
             for part in payload['parts']:
                 if part['mimeType'] == 'text/plain':
                     data = part['body']['data']
-                    decoded_bytes = base64.urlsafe_b64decode(data.encode('UTF-8'))
+                    decoded_bytes = base64.urlsafe_b64decode(
+                        data.encode('UTF-8'))
                     body = decoded_bytes.decode('UTF-8')
                     break
         else:
@@ -66,9 +88,12 @@ else:
                 messages=[
                     {
                         "role": "system",
-                        "content": (
-                            "You are a helpful assistant that writes short, "
-                            "professional email replies."
+                        "content":(
+                            "You are a smart and helpful email assistant. "
+                            "Your job is to read the email message provided and generate a short, professional, and relevant response. "
+                            "If the email contains a question or request, respond clearly and directly. "
+                            "If it's just an update or greeting, acknowledge it politely. "
+                            "Avoid generic phrases. Personalize the tone if possible."
                         )
                     },
                     {          
@@ -76,11 +101,12 @@ else:
                         "content": email_body
                     }
                 ],
-                temperature=0.7,
-                max_tokens=150
+                temperature=0.5,
+                max_tokens=200
             )
 
             suggestion = response.choices[0].message.content
             print("💡 Suggested Response:")
             print(suggestion)
             print("=" * 50)
+    
