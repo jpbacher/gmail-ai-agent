@@ -1,5 +1,6 @@
 import os
 import base64
+import re 
 from openai import OpenAI
 from datetime import datetime, timezone
 from google.oauth2.credentials import Credentials
@@ -19,9 +20,11 @@ creds = Credentials.from_authorized_user_file(
 )
 
 service = build("gmail", "v1", credentials=creds)
+
+# just retrieve emails from today
 today_utc = datetime.now(timezone.utc).date()
 
-# Call the Gmail API
+# Call the Gmail API and fetch emails from the Primary category
 results = (
     service.users()
     .messages()
@@ -34,6 +37,18 @@ results = (
 )
 
 messages = results.get('messages', [])
+
+def is_likely_newsletter(headers, subject, body):
+    subject_keywords = ['newsletter', 'digest', 'alert', 'update', 'job alert']
+    content_keywords = ['unsubscribe', 'view in browser', 'manage preferences', 'click here']
+    from_mailing_list = any(h['name'].lower() == 'list-unsubscribe' for h in headers)
+    
+    subject_match = any(keyword in subject.lower() for keyword in subject_keywords)
+    body_match = any(keyword in body.lower() for keyword in content_keywords)
+
+    return from_mailing_list or subject_match or body_match
+
+summary = {"processed": 0, "skipped": 0, "skipped_reasons": []}
 
 if not messages:
     print("No new primary emails found today.")
