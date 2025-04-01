@@ -1,6 +1,5 @@
 import os
 import base64
-import re 
 from openai import OpenAI
 from datetime import datetime, timezone
 from google.oauth2.credentials import Credentials
@@ -39,25 +38,21 @@ results = (
 messages = results.get('messages', [])
 
 def is_likely_newsletter(headers, subject, body):
+    
     subject_keywords = ['newsletter', 'digest', 'alert', 'update', 'job alert']
     content_keywords = ['unsubscribe', 'view in browser', 'manage preferences', 'click here']
     from_mailing_list = any(h['name'].lower() == 'list-unsubscribe' for h in headers)
-    
     subject_match = any(keyword in subject.lower() for keyword in subject_keywords)
     body_match = any(keyword in body.lower() for keyword in content_keywords)
 
     return from_mailing_list or subject_match or body_match
 
-summary = {"processed": 0, "skipped": 0, "skipped_reasons": []}
+
+summary = {"processed": 0, "skipped": 0, "skipped_subjects": []}
 
 if not messages:
     print("No new primary emails found today.")
 else:
-    print(f"Found {len(messages)} new email(s) in Primary today.")
-    # track processed and skipped emails
-    processed_count = 0
-    skipped_count = 0
-
     for msg in messages:
         msg_detail = (
             service.users()
@@ -72,27 +67,10 @@ else:
         headers = payload.get('headers', [])
 
         # Extract email headers
-        subject = next((header['value'] for header in headers if 
-                        header['name'] == 'Subject'), 'No Subject')
-        date = next((header['value'] for header in headers if 
-                     header['name'] == 'Date'), 'No Date')
-        sender = next((header['value'] for header in headers if 
-                       header['name'] == 'From'), 'Unknown Sender')
+        subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'No Subject')
+        sender = next((h['value'] for h in headers if h['name'] == 'From'), 'No Sender')
 
-        # Skip automated emails
-        skip_keywords = ["noreply", "no-reply", "do-not-reply", "newsletter", "notifications", 
-                         "mailer", "mailchimp", "hubspot", "job alert"]
-        if any(keyword in sender.lower() for keyword in skip_keywords):
-            print(f"⏭️ Skipping automated email from: {sender}")
-            skipped_count += 1
-            continue
-        
-        processed_count += 1
-        print(f"📩 Subject: {subject}")
-        print(f"🕒 Date: {date}")
-        print(f"👤 From: {sender}")
-
-        # Extract plain text body
+        # Extract email body
         email_body = ""
         if 'parts' in payload:
             for part in payload['parts']:
@@ -108,40 +86,50 @@ else:
                 decoded_bytes = base64.urlsafe_b64decode(data.encode('UTF-8'))
                 body = decoded_bytes.decode('UTF-8')
 
-        if body:
-            print("📨 Email body preview:")
-            print(body[:300], '...')
-            print("🤖 Generating GPT-based response suggestion...")
+        if is_likely_newsletter(headers, subject, body):
+            print(f"⛔ Skipping likely newsletter or mass email from: {sender} | Subject: {subject}")
+            summary["skipped"] += 1
+            summary["skipped_subjects"].append(subject)
+            continue
 
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a smart and helpful email assistant. "
-                            "Your job is to read the email message provided and generate a short, professional, and relevant response. "
-                            "If the email contains a question or request, respond clearly and directly. "
-                            "If it's just an update or greeting, acknowledge it politely. "
-                            "Avoid generic phrases. Personalize the tone if possible."
-                        )
-                    },
-                    {          
-                        "role": "user",
-                        "content": email_body
-                    }
-                ],
-                temperature=0.5,
-                max_tokens=200
-            )
+        print(f"📩 Subject: {subject}")
+        print(f"🧠 From: {sender}")
+        print("📨 Email body preview:")
+        print(body[:300], '...')
 
-            suggestion = response.choices[0].message.content
-            print("💡 Suggested Response:")
-            print(suggestion)
-            print("=" * 75)
+        print("🤖 Generating GPT-based response suggestion...")
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful assistant that writes short, professional email replies to real people. "
+                        "Avoid responding to newsletters, promotions, or auto-generated emails."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": body
+                }
+            ],
+            temperature=0.7,
+            max_tokens=150
+        )    
+
+        suggestion = response.choices[0].message.content
+        print("💡 Suggested Response:")
+        print(suggestion)
+        print("=" * 75)
+        summary["processed"] += 1
     
     print("=" * 75)
     print("📊 Summary:")
-    print(f"✅ Processed human-like emails: {processed_count}")
-    print(f"🚫 Skipped newsletters/automated emails: {skipped_count}")
+    print(f"✅ Processed human-like emails: {summary['processed']}")
+    print(f"🚫 Emails skipped: {summary['skipped']}")
+    if summary["skipped_subjects"]:
+        print("🚫 Skipped subjects:")
+        for subject in summary["skipped_subjects"]:
+            print(f" - {subject}")
     print("=" * 75)
