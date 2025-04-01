@@ -53,9 +53,19 @@ else:
         headers = payload.get('headers', [])
 
         # Extract email headers
-        subject = next((header['value'] for header in headers if header['name'] == 'Subject'), 'No Subject')
-        date = next((header['value'] for header in headers if header['name'] == 'Date'), 'No Date')
-        sender = next((header['value'] for header in headers if header['name'] == 'From'), 'Unknown Sender')
+        subject = next((header['value'] for header in headers if 
+                        header['name'] == 'Subject'), 'No Subject')
+        date = next((header['value'] for header in headers if 
+                     header['name'] == 'Date'), 'No Date')
+        sender = next((header['value'] for header in headers if 
+                       header['name'] == 'From'), 'Unknown Sender')
+
+        # Skip automated emails
+        skip_keywords = ["noreply", "no-reply", "do-not-reply", "newsletter", "notifications", 
+                         "mailer", "mailchimp", "hubspot", "job alert"]
+        if any(keyword in sender.lower() for keyword in skip_keywords):
+            print(f"⏭️ Skipping automated email from: {sender}")
+            continue
 
         print(f"📩 Subject: {subject}")
         print(f"🕒 Date: {date}")
