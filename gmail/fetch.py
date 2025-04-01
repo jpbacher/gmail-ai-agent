@@ -1,15 +1,12 @@
 from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
 from datetime import datetime, timezone
 
 def fetch_today_primary_emails(creds):
     """
-    Fetches emails from the Gmail inbox labeled 'Primary' that were received today (UTC).
-    Returns a list of email message metadata.
+    Builds the Gmail API service and fetches emails from the 'Primary' inbox received today (UTC).
+    Returns a list of email metadata and the service object.
     """
     service = build("gmail", "v1", credentials=creds)
-
-    # Get today’s UTC date for filtering
     today_utc = datetime.now(timezone.utc).date()
 
     results = service.users().messages().list(
