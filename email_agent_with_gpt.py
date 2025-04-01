@@ -39,6 +39,10 @@ if not messages:
     print("No new primary emails found today.")
 else:
     print(f"Found {len(messages)} new email(s) in Primary today.")
+    # track processed and skipped emails
+    processed_count = 0
+    skipped_count = 0
+
     for msg in messages:
         msg_detail = (
             service.users()
@@ -65,8 +69,10 @@ else:
                          "mailer", "mailchimp", "hubspot", "job alert"]
         if any(keyword in sender.lower() for keyword in skip_keywords):
             print(f"⏭️ Skipping automated email from: {sender}")
+            skipped_count += 1
             continue
-
+        
+        processed_count += 1
         print(f"📩 Subject: {subject}")
         print(f"🕒 Date: {date}")
         print(f"👤 From: {sender}")
@@ -117,5 +123,10 @@ else:
             suggestion = response.choices[0].message.content
             print("💡 Suggested Response:")
             print(suggestion)
-            print("=" * 50)
+            print("=" * 75)
     
+    print("=" * 75)
+    print("📊 Summary:")
+    print(f"✅ Processed human-like emails: {processed_count}")
+    print(f"🚫 Skipped newsletters/automated emails: {skipped_count}")
+    print("=" * 75)
