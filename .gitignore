@@ -7,5 +7,4 @@ venv/
 .DS_Store
 .gmail-credentials.json
 token.json
-
 gmail-credentials.json
