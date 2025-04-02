@@ -1,7 +1,7 @@
 from googleapiclient.discovery import build
 
 
-def fetch_today_primary_emails(creds, since_timestamp):
+def fetch_emails_since(creds, since_timestamp):
     """
     Fetch emails from the Gmail inbox labeled 'Primary' 
     received after the given Unix timestamp.
