@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from gmail_auth import authenticate_gmail
 from gmail.fetch import fetch_emails_since
 from gmail.parser import extract_plain_text_body, extract_headers
