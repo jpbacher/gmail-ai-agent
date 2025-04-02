@@ -1,13 +1,7 @@
-def is_likely_automated_email(headers, subject, body):
-    """
-    Applies rules to determine whether an email is an automated or bulk message.
-    Returns True if the email is likely a newsletter; False otherwise.
-    """
-    subject = subject.lower()
-    body = body.lower()
+from typing import Tuple
 
-    # Check common newsletter keywords
-    auto_keywords = [
+# Keywords that are indicative of automated emails
+auto_keywords = [
         "unsubscribe",
         "list-unsubscribe",
         "opt-out",
@@ -24,13 +18,6 @@ def is_likely_automated_email(headers, subject, body):
         "notification",
         "alert"
     ]
-
-    for keyword in auto_keywords:
-        if keyword in subject or keyword in body:
-            return True
-
-    return False
-
 
 def is_bulk_sender(sender: str) -> bool:
     """
@@ -49,3 +36,28 @@ def is_bulk_sender(sender: str) -> bool:
         "linkedin"
     ]
     return any(domain in sender for domain in bulk_domains)
+
+
+def is_likely_automated_email(headers, subject, body) -> Tuple[bool, str]:
+    """
+    Applies rules to determine whether an email is an automated or bulk message.
+    Returns True if the email is likely a newsletter; False otherwise.
+    """
+    sender = next((h["value"] for h in headers if h["name"].lower() == "from"), "").lower()
+
+    if is_bulk_sender(sender):
+        return True, f"Sender matches known bulk domains: {sender}"
+
+    if any(h["name"].lower() == "list-unsubscribe" for h in headers):
+        return True, "Header contains 'List-Unsubscribe'"
+
+    for kw in auto_keywords:
+        if kw in subject.lower():
+            return True, f"Subject contains keyword: '{kw}'"
+
+    for kw in auto_keywords:
+        if kw in body.lower():
+            return True, f"Body contains keyword: '{kw}'"
+
+    return False, ""
+
