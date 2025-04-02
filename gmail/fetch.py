@@ -1,18 +1,17 @@
 from googleapiclient.discovery import build
-from datetime import datetime, timezone
 
-def fetch_today_primary_emails(creds):
+
+def fetch_today_primary_emails(creds, since_timestamp):
     """
-    Builds the Gmail API service and fetches emails from the 'Primary' inbox received today (UTC).
-    Returns a list of email metadata and the service object.
+    Fetch emails from the Gmail inbox labeled 'Primary' 
+    received after the given Unix timestamp.
     """
     service = build("gmail", "v1", credentials=creds)
-    today_utc = datetime.now(timezone.utc).date()
 
     results = service.users().messages().list(
         userId='me',
         labelIds=['INBOX'],
-        q=f'category:primary after:{today_utc}'
+        q=f'category:primary after:{since_timestamp}'
     ).execute()
 
     return results.get('messages', []), service
