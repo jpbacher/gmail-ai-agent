@@ -1,4 +1,7 @@
-from utils.logger import logger
+from utils.logger import get_logger
+
+
+logger = get_logger()
 
 
 def approval_flow(subject, response):
@@ -28,4 +31,4 @@ def approval_flow(subject, response):
             return None
         else:
             print("Invalid input. Please enter A, E, or S.")
-    
+  
