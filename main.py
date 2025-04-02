@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from gmail_auth import authenticate_gmail
 from gmail.fetch import fetch_emails_since
 from gmail.parser import extract_plain_text_body, extract_headers
@@ -49,7 +48,7 @@ def main():
             logger.warning(f"⚠️ No body found for email: {subject}")
 
     # Save current timestamp after successful processing
-    save_last_run_time(int(datetime.now(datetime.timezone.utc.timestamp())))
+    save_last_run_time()
     save_summary(summary)
     logger.info(f"Summary — Skipped: {skipped_count}, Responded: {processed_count}")
     logger.info("✅ Timestamp updated after run.")
