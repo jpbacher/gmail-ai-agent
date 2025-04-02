@@ -6,6 +6,7 @@ from agent.responder import generate_gpt_reply
 from utils.logger import get_logger
 from utils.timestamp_tracker import load_last_run_time, save_last_run_time
 from utils.summary_tracker import create_summary, update_summary, save_summary
+from agent.approval import approval_flow 
 
 
 logger = get_logger()
@@ -40,10 +41,20 @@ def main():
 
         if body:
             logger.info(f"✉️ Generating response for: {subject}")
-            processed_count += 1
             response = generate_gpt_reply(body)
             print(f"\nSuggested Response for '{subject}':\n{response}")
-            update_summary(summary,"processed", subject)
+            
+            # asking for approval
+            approved_response = approval_flow(subject, response)
+            if approved_response:
+                print(f"✅ Approved Response:\n{approved_response}")
+                processed_count += 1
+                update_summary(summary, "processed", subject)
+                logger.info(f"✅ Responded to: {subject}")
+            else:
+                skipped_count += 1
+                update_summary(summary, "skipped", subject)
+                logger.info(f"⏭️ Skipped responding to: {subject}")
         else:
             logger.warning(f"⚠️ No body found for email: {subject}")
 
