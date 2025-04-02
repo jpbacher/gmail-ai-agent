@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 # Define a path for the timestamp file
@@ -10,7 +10,7 @@ def save_last_run_time(timestamp: int = None):
     Save the current Unix timestamp to a file. Optionally accepts a custom timestamp.
     """
     if timestamp is None:
-        timestamp = int(datetime.now(datetime.timezone.utc.timestamp()))
+        timestamp = int(datetime.now(timezone.utc).timestamp())
     with open(TIMESTAMP_FILE, "w") as f:
         f.write(str(timestamp))
 
