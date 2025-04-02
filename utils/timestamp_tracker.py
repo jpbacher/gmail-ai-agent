@@ -4,6 +4,7 @@ import os
 # Define a path for the timestamp file
 TIMESTAMP_FILE = "last_run_time.txt"
 
+
 def save_last_run_time(timestamp: int = None):
     """
     Save the current Unix timestamp to a file. Optionally accepts a custom timestamp.
