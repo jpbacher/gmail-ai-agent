@@ -9,6 +9,7 @@ LOG_DIR = "logs"
 LOG_FILE = "app.log"
 os.makedirs(LOG_DIR, exist_ok=True)
 
+
 def get_logger(name: str = "gmail_ai_agent") -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(LEVEL)
