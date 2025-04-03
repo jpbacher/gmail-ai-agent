@@ -1,17 +1,13 @@
-from googleapiclient.discovery import build
-
-
-def fetch_emails_since(creds, since_timestamp):
+def fetch_recent_primary_emails(service, max_results=21):
     """
-    Fetch emails from the Gmail inbox labeled 'Primary' 
-    received after the given Unix timestamp.
+    Fetch recent 'Primary' labeled emails. We'll filter by timestamp later.
     """
-    service = build("gmail", "v1", credentials=creds)
-
     results = service.users().messages().list(
         userId='me',
         labelIds=['INBOX'],
-        q=f'category:primary after:{since_timestamp}'
+        q='category:primary',
+        maxResults=max_results  
     ).execute()
 
-    return results.get('messages', []), service
+    messages = results.get("messages", [])
+    return messages
