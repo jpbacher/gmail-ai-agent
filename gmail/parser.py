@@ -1,5 +1,6 @@
 import base64
 
+
 def extract_headers(payload):
     """
     Extracts commonly used email headers from the Gmail message payload.
