@@ -8,3 +8,5 @@ venv/
 .gmail-credentials.json
 token.json
 gmail-credentials.json
+logs/*
+!logs/.gitkeep
