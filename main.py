@@ -1,12 +1,14 @@
+from datetime import datetime, timezone
+from googleapiclient.discovery import build
 from gmail_auth import authenticate_gmail
-from gmail.fetch import fetch_emails_since
+from gmail.fetch import fetch_recent_primary_emails
 from gmail.parser import extract_plain_text_body, extract_headers
 from gmail.filter import is_likely_automated_email
 from agent.responder import generate_gpt_reply
 from utils.logger import get_logger
 from utils.timestamp_tracker import load_last_run_time, save_last_run_time
 from utils.summary_tracker import create_summary, update_summary, save_summary
-from agent.approval import approval_flow 
+from agent.approval import approval_flow
 
 
 logger = get_logger()
@@ -14,12 +16,16 @@ logger = get_logger()
 
 def main():
     creds = authenticate_gmail()
-    
+    service = build('gmail', 'v1', credentials=creds)
     # Load the timestamp of the last successful run
     last_run_timestamp = load_last_run_time()
     logger.info(f"📅 Last run timestamp: {last_run_timestamp}")
 
-    messages, _ = fetch_emails_since(creds, last_run_timestamp)
+    messages = fetch_recent_primary_emails(service)
+
+    if not messages:
+        logger.info("📭 No new emails to process.")
+        return
 
     summary = create_summary()
 
@@ -59,7 +65,7 @@ def main():
             logger.warning(f"⚠️ No body found for email: {subject}")
 
     # Save current timestamp after successful processing
-    save_last_run_time()
+    save_last_run_time(int(datetime.now(timezone.utc).timestamp()))
     save_summary(summary)
     logger.info(f"Summary — Skipped: {skipped_count}, Responded: {processed_count}")
     logger.info("✅ Timestamp updated after run.")
