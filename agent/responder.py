@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+
 def generate_gpt_reply(email_body):
     """
     Generates a GPT-based reply suggestion for a given email body using OpenAI's API.
