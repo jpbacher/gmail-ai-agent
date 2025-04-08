@@ -1,3 +1,4 @@
+import re 
 from gmail_auth import authenticate_gmail
 from gmail.fetch import fetch_recent_primary_emails
 from gmail.parser import extract_headers, extract_plain_text_body
@@ -9,18 +10,29 @@ from utils.logger import get_logger
 logger = get_logger()
 
 
+def extract_email_address(from_header: str) -> str:
+    """Extracts email from 'From' header like 'John Doe <john@example.com>'."""
+    match = re.search(r'<(.+?)>', from_header)
+    if match:
+        return match.group(1)
+    return from_header
+
+
 def get_emails_for_ui():
     creds = authenticate_gmail()
-    messages, service = fetch_recent_primary_emails(creds)
+    messages, service = fetch_recent_primary_emails(
+        creds
+    )
 
     if not messages:
-        return []
+        return [], service
 
     last_run_ts = load_last_run_time()
     email_samples = []
 
     for msg_meta in messages:
-        msg_detail = service.users().messages().get(userId="me", id=msg_meta["id"]).execute()
+        msg_detail = service.users().messages().get(
+            userId="me", id=msg_meta["id"]).execute()
         internal_ts = int(msg_detail.get("internalDate", 0)) // 1000
         if internal_ts <= last_run_ts:
             continue
@@ -31,14 +43,18 @@ def get_emails_for_ui():
 
         if not body or is_likely_automated_email(headers, subject, body)[0]:
             continue
-
+        
+        to_email = extract_email_address(sender)
         gpt_reply = generate_gpt_reply(body)
 
         email_samples.append({
             "subject": subject,
             "sender": sender,
+            "to_email": to_email,
             "body": body[:500] + "...",  # trim preview
-            "suggested_response": gpt_reply
+            "suggested_response": gpt_reply,
+            "message_id": msg_detail.get("id"),
+            "thread_id": msg_detail.get("threadId")
         })
 
-    return email_samples
+    return email_samples, service 
