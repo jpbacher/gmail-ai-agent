@@ -25,6 +25,7 @@ def generate_gpt_reply(email_body):
                     "role": "system",
                     "content": (
                         "You are a helpful assistant who drafts brief and professional email responses. "
+                        "Sign off every message with 'Best, Josh Bacher'. "
                         "Only generate a reply if it makes sense to respond based on the content provided. "
                         "Avoid generic greetings like 'How can I help you?'."
                     )
