@@ -1,9 +1,11 @@
 import base64
 from email.mime.text import MIMEText
-from googleapiclient.discovery import build
+# from googleapiclient.discovery import build
 
 
-def send_gmail_reply(service, message_id, thread_id, to_email, subject, reply_body):
+def send_gmail_reply(
+    service, message_id, thread_id, to_email, subject, reply_body
+):
     """
     Sends a reply email using the Gmail API.
 
@@ -24,8 +26,8 @@ def send_gmail_reply(service, message_id, thread_id, to_email, subject, reply_bo
     mime_message = MIMEText(message_text)
     mime_message["to"] = to_email
     mime_message["subject"] = f"Re: {subject}"
-    mime_message["In-Reply-To"] = message_id
-    mime_message["References"] = message_id
+    mime_message["In-Reply-To"] = f"<{message_id}>"
+    mime_message["References"] = f"<{message_id}>"
 
     raw_message = base64.urlsafe_b64encode(mime_message.as_bytes()).decode()
 
