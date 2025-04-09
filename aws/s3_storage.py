@@ -3,46 +3,98 @@ import json
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+from utils.logger import logger
+
 
 load_dotenv()
 
+logger = logger.get_logger(__name__)
+
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
-s3 = boto3.client("s3")
+
+def get_s3_client():
+    return boto3.client(
+        "s3",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        region_name=os.getenv("AWS_REGION")
+    )
 
 
 def save_response_to_s3(response_type, subject, sender, response_body):
     """
-    Saves a response (approved/edited/skipped) as a JSON object to S3.
+    Saves an email response (approved, edited, or skipped) to an S3 bucket
+    in a structured JSON format.
 
     Args:
-        response_type (str): 'approved', 'edited', or 'skipped'
-        subject (str): Email subject line
-        sender (str): Email sender
-        response_body (str): The actual response content
+        response_type (str): The type of response (e.g., "approved",
+        "edited", or "skipped").
+        subject (str): The subject of the original email.
+        sender (str): The sender's email address.
+        response_body (str): The body of the GPT-generated or edited response.
 
     Returns:
-        dict: The S3 put_object response
+        dict: A dictionary containing:
+            - "status": "success" or "error"
+            - "s3_key" (str, optional): The S3 object key where the file was 
+            stored (if successful)
+            - "aws_response" (dict, optional): The full AWS S3 API response
+            (if successful)
+            - "error" (str, optional): The error message (if failed)
     """
-    timestamp = datetime.now(
-        datetime.timezone.utc
-    ).strftime("%Y-%m-%dT%H-%M-%S")
-    sanitized_subject = subject[:50].replace(' ', '_').replace('/', '-')
-    filename = f"{sanitized_subject}_{timestamp}.json"
+    
+    s3 = get_s3_client()
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"{subject.replace(' ', '_')}_{now}.json"
     key = f"{response_type}/{filename}"
 
-    json_data = json.dumps({
+    data = {
+        "timestamp": now,
+        "response_type": response_type,
         "subject": subject,
         "sender": sender,
-        "response": response_body,
-        "timestamp": timestamp
-    })
+        "response_body": response_body
+    }
 
-    response = s3.put_object(
-        Bucket=BUCKET_NAME,
-        Key=key,
-        Body=json_data,
-        ContentType="application/json"
-    )
+    json_data = json.dumps(data, indent=2)
 
-    return response
+    try:
+        response = s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=key,
+            Body=json_data,
+            ContentType="application/json"
+        )
+        return {"status": "success", "s3_key": key, "aws_response": response}
+    except Exception as e:
+        logger.exception(f"❌ Failed to upload to S3: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+def upload_log_file_to_s3(local_log_path, s3_log_folder):
+    """
+    Uploads the local app log file to the S3 bucket under a logs folder.
+    The log file will be saved with a timestamp in the filename.
+
+    Args:
+        local_log_path (str): The path to the local log file.
+        s3_log_folder (str): The S3 folder where the log file 
+        will be uploaded.
+    """
+    
+    s3 = get_s3_client()
+    
+    if not os.path.exists(local_log_path):
+        logger.warning(f"No log file found at {local_log_path}")
+        return
+
+    timestamp = datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    s3_key = f"{s3_log_folder}/app_{timestamp}.log"
+
+    try:
+        with open(local_log_path, "rb") as f:
+            s3.upload_fileobj(f, BUCKET_NAME, s3_key)
+        logger.info(f"📤 Uploaded log file to S3: {s3_key}")
+    except Exception as e:
+        logger.exception(f"❌ Failed to upload log file: {e}")
