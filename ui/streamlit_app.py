@@ -13,6 +13,7 @@ if project_root not in sys.path:
 # --- Local modules ---
 from pipeline.pipeline import get_emails_for_ui
 from gmail.send import send_gmail_reply
+from aws.s3_storage import get_s3_client, save_response_to_s3, upload_log_file_to_s3
 
 st.set_page_config(page_title="Gmail AI Agent", layout="wide")
 
@@ -41,27 +42,79 @@ else:
             col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
                 if st.button("✅ Approve", key=f"approve_{email['subject']}"):
-                    try:
-                        response = send_gmail_reply(
-                            service=service,
-                            message_id=email["message_id"],
-                            thread_id=email["thread_id"],
-                            to_email=email["to_email"],
-                            subject=email["subject"],
-                            reply_body=suggested_response,
-                        )
-                        st.success("✅ Email sent successfully!")
-                        st.code(
-                            f"Message ID: {response.get('id')}", 
-                            language="text"
-                        )
-                    except Exception as e:
-                        st.error(f"❌ Failed to send email: {e}")
+                    st.success("Approved ✅")
+                    s3_response = save_response_to_s3(
+                        response_type="approved",
+                        subject=email["subject"],
+                        sender=email["sender"],
+                        response_body=suggested_response
+                    )
+                if s3_response.get("ResponseMetadata", {}).get(
+                    "HTTPStatusCode"
+                ) == 200:
+                    st.toast("✅ Response saved to S3!", icon="🗂️")
+                    
+                    # Trigger log file upload to S3
+                    upload_result = upload_log_file_to_s3(
+                        local_log_path="logs/app.log",
+                        s3_log_folder="logs"
+                    )
+                    if upload_result and \
+                       upload_result.get("status") == "success":
+                        st.toast("📤 Log uploaded to S3!", icon="📁")
+                    else:
+                        st.warning("⚠️ Log upload failed or skipped.")
+                else:
+                    st.error("⚠️ Failed to save response to S3.")
 
             with col2:
                 if st.button("📝 Edit Only", key=f"editbtn_{email['subject']}"):
                     st.info("✏️ Edited but not submitted yet.")
+                    s3_response = save_response_to_s3(
+                        response_type="edited",
+                        subject=email["subject"],
+                        sender=email["sender"],
+                        response_body=suggested_response
+                    )
+                if s3_response.get("ResponseMetadata", {}).get(
+                    "HTTPStatusCode"
+                ) == 200:
+                    st.toast("📝 Edited response saved to S3.", icon="📤")
+
+                    upload_result = upload_log_file_to_s3(
+                        local_log_path="logs/app.log",
+                        s3_log_folder="logs"
+                    )
+                    if upload_result and \
+                       upload_result.get("status") == "success":
+                        st.toast("📤 Log uploaded to S3!", icon="📁")
+                    else:
+                        st.warning("⚠️ Log upload failed or skipped.")
+                else:
+                    st.error("⚠️ Failed to save edited response to S3.")
 
             with col3:
                 if st.button("❌ Skip", key=f"skip_{email['subject']}"):
                     st.warning("Skipped ❌")
+                    s3_response = save_response_to_s3(
+                        response_type="skipped",
+                        subject=email["subject"],
+                        sender=email["sender"],
+                        response_body=suggested_response
+                    )
+                if s3_response.get("ResponseMetadata", {}).get(
+                    "HTTPStatusCode"
+                ) == 200:
+                    st.toast("⏭️ Skipped response saved to S3.", icon="📥")
+
+                    upload_result = upload_log_file_to_s3(
+                        local_log_path="logs/app.log",
+                        s3_log_folder="logs"
+                    )
+                    if upload_result and \
+                       upload_result.get("status") == "success":
+                        st.toast("📤 Log uploaded to S3!", icon="📁")
+                    else:
+                        st.warning("⚠️ Log upload failed or skipped.")
+                else:
+                    st.error("⚠️ Failed to save skipped response to S3.")
