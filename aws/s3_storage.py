@@ -3,12 +3,12 @@ import json
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from utils.logger import logger
+from utils.logger import get_logger
 
 
 load_dotenv()
 
-logger = logger.get_logger(__name__)
+logger = get_logger(__name__)
 
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
