@@ -13,7 +13,10 @@ if project_root not in sys.path:
 # --- Local modules ---
 from pipeline.pipeline import get_emails_for_ui
 from gmail.send import send_gmail_reply
-from aws.s3_storage import get_s3_client, save_response_to_s3, upload_log_file_to_s3
+from aws.s3_storage import (
+    save_response_to_s3,
+    upload_log_file_to_s3,
+)
 
 st.set_page_config(page_title="Gmail AI Agent", layout="wide")
 
