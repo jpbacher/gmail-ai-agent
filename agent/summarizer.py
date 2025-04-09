@@ -13,7 +13,10 @@ def summarize_email(body: str) -> str:
             messages=[
                 {
                     "role": "system",
-                    "content": "Summarize the following email in 2-3 concise sentences for a daily inbox digest."
+                    "content": (
+                        "Summarize the following email in 2-3 concise"
+                        "sentences for a daily inbox digest."
+                    )
                 },
                 {
                     "role": "user",
