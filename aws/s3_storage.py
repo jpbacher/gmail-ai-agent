@@ -88,7 +88,7 @@ def save_summary_to_s3(subject, sender, summary_text):
             - "aws_response" (dict, optional): The full AWS S3 API response (if successful)
             - "error" (str, optional): The error message (if failed)
     """
-    now = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+    now = datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"{subject.replace(' ', '_')}_{now}.json"
     key = f"summaries/{filename}"
 
