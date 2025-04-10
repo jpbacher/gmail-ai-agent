@@ -1,12 +1,26 @@
+import os
+import logging
 from openai import OpenAI
 from dotenv import load_dotenv
-import os
+
 
 load_dotenv()
+logger = logging.getLogger(__name__)
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-def summarize_email(body: str) -> str:
+def summarize_email(email_body: str) -> str:
+    """
+    Uses OpenAI to generate a concise summary of an email.
+    
+    Args:
+        email_body (str): Full email content to summarize.
+        
+    Returns:
+        str: GPT-generated summary.
+    """
+    
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -14,13 +28,13 @@ def summarize_email(body: str) -> str:
                 {
                     "role": "system",
                     "content": (
-                        "Summarize the following email in 2-3 concise"
-                        "sentences for a daily inbox digest."
+                        "You are a helpful assistant that summarizes emails in 1-3 sentences."
+                        "Highlight the key point or action if present."
                     )
                 },
                 {
                     "role": "user",
-                    "content": body
+                    "content": email_body
                 }
             ],
             temperature=0.5,
@@ -28,5 +42,6 @@ def summarize_email(body: str) -> str:
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"⚠️ Failed to summarize: {e}"
+        logger.exception(f"❌ Failed to summarize email: {e}")
+        return "⚠️ Could not generate summary."
     
