@@ -13,10 +13,8 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def summarize_email(email_body: str) -> str:
     """
     Uses OpenAI to generate a concise summary of an email.
-    
     Args:
-        email_body (str): Full email content to summarize.
-        
+        email_body (str): Full email content to summarize.  
     Returns:
         str: GPT-generated summary.
     """
@@ -50,12 +48,10 @@ def should_upload_summary(subject: str, sender: str, body: str) -> bool:
     """
     Determines whether a summary should be uploaded to S3.
     Newsletter-like emails are uploaded; job alerts are excluded.
-    
     Args:
         subject (str): Email subject
         sender (str): Sender email
         body (str): Full email body
-
     Returns:
         bool: True if summary should be saved to S3
     """
