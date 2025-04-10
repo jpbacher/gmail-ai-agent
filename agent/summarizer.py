@@ -45,6 +45,7 @@ def summarize_email(email_body: str) -> str:
         logger.exception(f"❌ Failed to summarize email: {e}")
         return "⚠️ Could not generate summary."
 
+
 def should_upload_summary(subject: str, sender: str, body: str) -> bool:
     """
     Determines whether a summary should be uploaded to S3.
