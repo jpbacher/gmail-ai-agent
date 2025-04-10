@@ -44,4 +44,44 @@ def summarize_email(email_body: str) -> str:
     except Exception as e:
         logger.exception(f"❌ Failed to summarize email: {e}")
         return "⚠️ Could not generate summary."
+
+def should_upload_summary(subject: str, sender: str, body: str) -> bool:
+    """
+    Determines whether a summary should be uploaded to S3.
+    Newsletter-like emails are uploaded; job alerts are excluded.
     
+    Args:
+        subject (str): Email subject
+        sender (str): Sender email
+        body (str): Full email body
+
+    Returns:
+        bool: True if summary should be saved to S3
+    """
+    sender_lower = sender.lower()
+    subject_lower = subject.lower()
+    body_lower = body.lower()
+
+    job_alert_keywords = [
+        "job alert", "job opportunity", "job opening",
+        "career opportunity", "job posting", "job vacancy",
+        "job listing", "job application", "job search",
+        "job offer", "job position", "job description",
+        "job details", "job requirements",
+        "job responsibilities", "job duties", "job qualifications",
+        "job skills", "job experience", "job match", "recommended job",
+        "job recommendation", "job suggestion", "job fit",
+        "job fit", "linkedin", "indeed", "ziprecruiter",
+        "monster", "glassdoor", "careerbuilder",
+        "glassdor", "lensa", "jobcase",
+        "jobscan", "simplyhired", "workable",
+    ]
+
+    if any(keyword in sender_lower for keyword in job_alert_keywords):
+        return False
+    if any(keyword in subject_lower for keyword in job_alert_keywords):
+        return False
+    if any(keyword in body_lower for keyword in job_alert_keywords):
+        return False
+
+    return True
