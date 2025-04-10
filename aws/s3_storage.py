@@ -72,6 +72,49 @@ def save_response_to_s3(response_type, subject, sender, response_body):
         return {"status": "error", "error": str(e)}
 
 
+def save_summary_to_s3(subject, sender, summary_text):
+    """
+    Saves an email summary to the S3 bucket under the 'summaries' folder.
+
+    Args:
+        subject (str): The subject of the email.
+        sender (str): The sender's email address.
+        summary_text (str): The GPT-generated summary content.
+
+    Returns:
+        dict: A dictionary containing:
+            - "status": "success" or "error"
+            - "s3_key" (str, optional): The S3 object key where the file was stored (if successful)
+            - "aws_response" (dict, optional): The full AWS S3 API response (if successful)
+            - "error" (str, optional): The error message (if failed)
+    """
+    now = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"{subject.replace(' ', '_')}_{now}.json"
+    key = f"summaries/{filename}"
+
+    data = {
+        "timestamp": now,
+        "type": "summary",
+        "subject": subject,
+        "sender": sender,
+        "summary": summary_text
+    }
+
+    json_data = json.dumps(data, indent=2)
+
+    try:
+        response = s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=key,
+            Body=json_data,
+            ContentType="application/json"
+        )
+        return {"status": "success", "s3_key": key, "aws_response": response}
+    except Exception as e:
+        logger.exception(f"❌ Failed to upload summary to S3: {e}")
+        return {"status": "error", "error": str(e)}
+
+
 def upload_log_file_to_s3(local_log_path, s3_log_folder):
     """
     Uploads the local app log file to the S3 bucket under a logs folder.
