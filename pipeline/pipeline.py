@@ -4,7 +4,7 @@ from gmail.fetch import fetch_recent_primary_emails
 from gmail.parser import extract_headers, extract_plain_text_body
 from gmail.filter import is_likely_automated_email
 from agent.responder import generate_gpt_reply
-from agent.summarizer import generate_gpt_summary
+from agent.summarizer import summarize_email
 from utils.timestamp_tracker import load_last_run_time
 from utils.logger import get_logger
 
@@ -53,7 +53,7 @@ def get_emails_for_ui():
         if (reply.lower().startswith("⚠️ unable to generate") or
                 "no response needed"):
             # If no useful reply, generate a summary instead
-            summary = generate_gpt_summary(body)
+            summary = summarize_email(body)
             summary_emails.append({
                 "subject": subject,
                 "sender": sender,
