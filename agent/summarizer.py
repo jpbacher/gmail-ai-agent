@@ -68,10 +68,10 @@ def should_upload_summary(subject: str, sender: str, body: str) -> bool:
         "job responsibilities", "job duties", "job qualifications",
         "job skills", "job experience", "job match", "recommended job",
         "job recommendation", "job suggestion", "job fit",
-        "job fit", "linkedin job alerts", "indeed", "ziprecruiter",
-        "monster", "glassdoor", "careerbuilder", "the muse jobs"
-        "glassdor", "lensa 24", "jobcase", "kaggle", 
-        "jobscan", "simplyhired", "workable",
+        "job fit", "linkedin job alerts", "indeed", "indeed apply",
+        "monster", "glassdoor", "careerbuilder", "the muse jobs",
+        "glassdor", "lensa 24", "jobcase", "kaggle",
+        "jobscan", "simplyhired", "workable", "ziprecruiter"
     ]
 
     if any(keyword in sender_lower for keyword in job_alert_keywords):
