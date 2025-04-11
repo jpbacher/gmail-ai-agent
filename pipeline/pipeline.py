@@ -3,7 +3,7 @@ from gmail_auth import authenticate_gmail
 from gmail.fetch import fetch_recent_primary_emails
 from gmail.parser import extract_headers, extract_plain_text_body
 from gmail.filter import is_likely_automated_email
-from agent.responder import generate_gpt_reply
+from agent.responder import generate_gpt_reply, email_requires_response
 from agent.summarizer import summarize_email
 from utils.timestamp_tracker import load_last_run_time
 from utils.logger import get_logger
@@ -43,16 +43,11 @@ def get_emails_for_ui():
         body = extract_plain_text_body(payload)
         subject, date, sender, headers = extract_headers(payload)
 
-        if not body or is_likely_automated_email(headers, subject, body)[0]:
+        if not body:
             continue
         
-        to_email = extract_email_address(sender)
-        
-        # Use GPT to decide if it's a reply or a summary case
-        reply = generate_gpt_reply(body)
-        if (reply.lower().startswith("⚠️ unable to generate") or
-                "no response needed"):
-            # If no useful reply, generate a summary instead
+        # If it's a newsletter, skip generating a reply and just summarize
+        if is_likely_automated_email(headers, subject, body)[0]:
             summary = summarize_email(body)
             summary_emails.append({
                 "subject": subject,
@@ -61,14 +56,26 @@ def get_emails_for_ui():
                 "summary": summary
             })
         else:
-            reply_emails.append({
-                "subject": subject,
-                "sender": sender,
-                "to_email": to_email,
-                "body": body[:500] + "...",
-                "suggested_response": reply,
-                "message_id": msg_detail.get("id"),
-                "thread_id": msg_detail.get("threadId")
-            })
+            needs_reply = email_requires_response(body)
+
+            if needs_reply:
+                reply = generate_gpt_reply(body)
+                reply_emails.append({
+                    "subject": subject,
+                    "sender": sender,
+                    "to_email": extract_email_address(sender),
+                    "body": body[:500] + "...",
+                    "suggested_response": reply,
+                    "message_id": msg_detail.get("id"),
+                    "thread_id": msg_detail.get("threadId")
+                })
+            else:
+                summary = summarize_email(body)
+                summary_emails.append({
+                    "subject": subject,
+                    "sender": sender,
+                    "body": body[:500] + "...",
+                    "summary": summary
+                })
 
     return reply_emails, summary_emails, service
