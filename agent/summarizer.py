@@ -69,8 +69,8 @@ def should_upload_summary(subject: str, sender: str, body: str) -> bool:
         "job skills", "job experience", "job match", "recommended job",
         "job recommendation", "job suggestion", "job fit",
         "job fit", "linkedin job alerts", "indeed", "ziprecruiter",
-        "monster", "glassdoor", "careerbuilder",
-        "glassdor", "lensa 24", "jobcase",
+        "monster", "glassdoor", "careerbuilder", "the muse jobs"
+        "glassdor", "lensa 24", "jobcase", "kaggle", 
         "jobscan", "simplyhired", "workable",
     ]
 
