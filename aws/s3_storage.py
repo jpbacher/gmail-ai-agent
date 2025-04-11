@@ -1,7 +1,7 @@
 import boto3
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from utils.logger import get_logger
 
@@ -88,7 +88,7 @@ def save_summary_to_s3(subject, sender, summary_text):
             - "aws_response" (dict, optional): The full AWS S3 API response (if successful)
             - "error" (str, optional): The error message (if failed)
     """
-    now = datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"{subject.replace(' ', '_')}_{now}.json"
     key = f"summaries/{filename}"
 
@@ -132,7 +132,7 @@ def upload_log_file_to_s3(local_log_path, s3_log_folder):
         logger.warning(f"No log file found at {local_log_path}")
         return
 
-    timestamp = datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
     s3_key = f"{s3_log_folder}/app_{timestamp}.log"
 
     try:
