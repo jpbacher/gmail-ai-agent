@@ -29,6 +29,6 @@ def load_last_run_time():
 
 
 def update_last_run_time():
-    current_ts = int(datetime.utcnow().timestamp())
+    current_ts = int(datetime.now(timezone.utc).timestamp())
     with open(TIMESTAMP_FILE, "w") as f:
         f.write(str(current_ts))
